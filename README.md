@@ -6,12 +6,15 @@ The benefits of benchmarking your study are:
 2. Improved confidence in your work and claims by integration of your findings with the results of other reports.
 3. A useful mechanism to demonstrate why your phenotyping approach is valid and/or superior in your context to a publicly available baseline.
 
-PhenoBench is written in Python 3.x, and requires some python scientific computing libraries (see requiements.txt and installation instructions). An R implementation will be developed at a later date depending on feedback and requests.
+PhenoBench is written in Python 3.x, and requires some python scientific computing libraries (see requirements.txt and installation instructions). An R implementation will be developed at a later date depending on feedback and requests.
 
 **Quick Start Instructions**
 
 1. Install [Anaconda](https://www.anaconda.com/download/?lang=en-us) for Python 3.x.
-2. Open Anaconda Navigator, go to Environments, create a new environment, open and activate its terminal, and run "conda install --file requirements.txt"
+2. Open Anaconda Navigator, go to Environments, create a new environment, open and activate its terminal, and run 
+
+"conda install -c conda-forge --yes --file requirements.txt"
+
 3. Download the Github desktop client. Clone the master branch (also see *Git Convention*).
 4. Open Spyder or a python terminal. Navigate to the PhenoBench home directory (github/PhenoBench) and run the getting started script. 
 

@@ -1,0 +1,13 @@
+numpy
+pandas
+matplotlib
+seaborn
+
+# pip install category-encoders
+#category_encoders
+
+# conda install -c conda-forge umap-learn
+umap-learn
+
+# conda install -c conda-forge hdbscan
+hdbscan
