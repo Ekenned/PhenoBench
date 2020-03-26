@@ -1,7 +1,12 @@
 # PhenoBench
 
-This is an in-progress suite of software tools built by the Utah TORCH lab for benchamrking and standardizing TBI phenotyping. 
-It is written in Python 3.x, and requires standard python scientific computing libraries and a few less standard packages (see requiements.txt and installation instructions). R implementation will be included at a later date depending on community response.
+This is an in-progress suite of software tools built by the Utah TORCH lab for benchmarking TBI phenotyping implementations.
+The benefits of benchmarking your study are:
+1. The security of cross-comparison and confirmation of your results with other reports, prior to a submission.
+2. Improved confidence in your work and claims by integration of your findings with the results of other reports.
+3. A useful mechanism to demonstrate why your phenotyping approach is valid and/or superior in your context to a publicly available baseline.
+
+PhenoBench is written in Python 3.x, and requires some python scientific computing libraries (see requiements.txt and installation instructions). An R implementation will be developed at a later date depending on feedback and requests.
 
 **Quick Start Instructions**
 
