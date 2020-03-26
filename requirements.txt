@@ -2,6 +2,9 @@ numpy
 pandas
 matplotlib
 seaborn
+pylab
+scikit-learn
+scipy
 
 # pip install category-encoders
 #category_encoders
