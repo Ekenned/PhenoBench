@@ -35,11 +35,12 @@ class PhenoBench():
         
         Secondary features:
         
-        - Methods for imputation
-        - Methods for categorical data encoding and handling
+        - Methods for quick, easy imputation
+        - Methods for categorical data encoding and string handling
         - Methods for estimating the optimal number of phenotypes
+        - Methods for autogeneration of figures and tables
         
-        Example 1: 
+        Example usage 1: 
         # Phenotyping with recommended settings and file writing
         #----------------------------------------
             
@@ -48,7 +49,7 @@ class PhenoBench():
         Benchmark.run()
         Benchmark.output()
         
-        Example 2:
+        Example usage 2:
         # Phenotyping with custom settings and no file writing
         #----------------------------------------
             
@@ -59,31 +60,36 @@ class PhenoBench():
                       reduce_nn =  30,
                       cluster_nn = 20,
                      )
-        Benchmark.output(write_figures = 0,
-                         write_tables = 0)
+        Benchmark.output(write_settings = 1,
+                         write_figures = 0,
+                         write_tables = 1)
         
     """
     
     def __init__(self):
         
         # Assign default settings
-        defaults = {'norm_vars':0,
-                    'dim_reduce':'UMAP',
-                    'cluster':'HDBSCAN',
-                    'reduce_nn':20,
-                    'min_d':0.1,
-                    'cluster_nn':20,
-                    'metric':'correlation',
-                    'write_settings':1,
-                    'write_figures':1,
-                    'write_tables':1,
+        defaults = {'norm_vars':0, # optionally standard score all variables
+                    'dim_reduce':'UMAP', # or GLRM, or PCA
+                    'cluster':'HDBSCAN', # or KMEANS
+                    'KMEANS_clusters':3, # Only valid for cluster=KMEANS
+                    'metric':'correlation', # UMAP settings
+                    'reduce_nn':20, # UMAP settings
+                    'min_d':0.1, # UMAP settings
+                    'min_c':1, # HDBSCAN settings
+                    'cluster_nn':20, # HDBSCAN settings
+                    'write_settings':1, # output toggle
+                    'write_figures':1, # output toggle
+                    'write_tables':1, # output toggle
                     }
         
-        # Inherit defaults
+        # Inherit defaults to class
         self.norm_vars = defaults['norm_vars'] 
         self.dim_reduce = defaults['dim_reduce']
         self.cluster = defaults['cluster']
+        self.KMEANS_clusters = defaults['KMEANS_clusters']
         self.min_d = defaults['min_d']
+        self.min_c = defaults['min_c']
         self.reduce_nn = defaults['reduce_nn']
         self.cluster_nn = defaults['cluster_nn']
         self.metric = defaults['metric']
@@ -91,6 +97,11 @@ class PhenoBench():
         self.write_figures= defaults['write_figures']
         self.write_tables = defaults['write_tables']
         self.settings = defaults
+        
+    def print_settings(self):
+        
+        [print(i[0],':',i[1]) for i in zip(
+                self.settings.keys(),self.settings.values())][0]
         
     def load(self,file):
         

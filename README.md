@@ -35,10 +35,10 @@ The scripts are orientated around tolerating SAS files and csv files as read-in 
 
 # Quick examples
 
-1. run generate_random_data.py to generate and write a csv data dictionary of correlated pseudo TBI data variables.
-2. run pheno_bench_data.py to read in, encode, perform dimensionality reduction and unsupervised clustering on 'generated_data.csv'
-3. run report_benchmarks.py to output tables and figures of the benchmarks achieved on the random pseudo dataset.
-
+1. run "generate_random_data.py" to generate "gen_data.csv": A data dictionary of pseudo-correlated TBI data variables.
+2. run "report_benchmarks.py" to output tables and figures of the benchmarks achieved on the random pseudo dataset "gen_data.csv".
+3. replace "gen_data.csv" with your own data dictionary within a secure environment, and rerun "report_benchmarks.py"
+4. Read the PhenoBench class documentation to try out different settings options.
 ------
 
 **Git Convention**
