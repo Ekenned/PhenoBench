@@ -24,20 +24,28 @@ from scipy.stats import norm
 from scipy.linalg import cholesky
 
 # USER INPUTS:
-seed = 0 # Hard coding of the random generating numpy seed (42).
-n_samples = 2000 # Define how many pseudo observations to generate (1000).
+seed = 4 # Hard coding of the random generating numpy seed (42).
+n_samples = 1000 # Define how many pseudo observations to generate (1000).
 output_filename = 'gen_data.csv' # Choose the output filename
+input_filename = 'random_data_covariates.csv'
+DPI = 300 # dots per inch for displayed figure
+
+# Settings
+mpl.rcParams['figure.dpi'] = DPI # Define output figure display/write DPI
 
 # Load the multicovariates, means,std of the desired simulation output datra
-covs = pd.read_csv('random_data_covariates.csv')
+covs = pd.read_csv(input_filename)
 
 # Extract the covariance matrix and simulation means, stds, and freqs.
 np.random.seed(seed=seed)
 r = covs.values[2::,1::].astype(int) # Extract the matrix of covariates
-var_names = covs.columns[1::].values # Extract example variable names
-var_inds = np.arange(len(var_names)) # Extract list of variable indices
 mean_freq = covs.iloc[0].values[1::] # Extract example variable means
 std = covs.iloc[1].values[1::] # Extract example variable standard deviations
+
+# Extract variable names, properties, and indices
+var_names = covs.columns[1::].values # Extract example variable names
+n_vars = len(var_names)
+var_inds = np.arange(n_vars) # Extract list of variable indices
 
 # Generate normalized random variables
 x = norm.rvs(size=(np.shape(r)[0], n_samples)) 
@@ -46,13 +54,19 @@ x = norm.rvs(size=(np.shape(r)[0], n_samples))
 c = cholesky(r, lower=True)
 
 # Convert the random variables to correlated variables.
-y = np.dot(c, x) 
+y = np.dot(c, x)
+
+# Generate a matrix of additive Gassian noise, scaled by noise_lvl
+# noise_lvl = 0 # We could optionally add another layer of model noise here
+# noise = noise_lvl*np.reshape(np.random.randn(n_samples*n_vars), np.shape(y))
 
 # Rescale correlated variables according to the csv-file means and stds:
 norm_means = np.mean(y,axis=1) # values from decomposition
 norm_std = np.std(y,axis=1) # values from decomposition
 std_ratio = std/norm_std # renormalization constants
+
 for i in var_inds:
+    #y[i,:] = (y[i,:] + noise[i,:])*std[i]/norm_std[i] + ... # additive noise
     y[i,:] = y[i,:]*std[i]/norm_std[i] + mean_freq[i] - norm_means[i]
 
 # Irreversible operations, data cleaning and scaling to 'true' variable ranges:
@@ -116,15 +130,14 @@ df.to_csv(output_filename,index=False)
 print('Wrote pseudodata file:',output_filename)
 
 # plot the correlation matrix of the output pseudodata
-mpl.rcParams['figure.dpi'] = 300 # Define output figure display/write DPI
 plt.imshow(corr_matrix,cmap='bwr',vmin=-1,vmax=1)
 plt.title('Pseudodata correlation colormap')
 plt.grid(False)
 plt.yticks(var_inds,[i for i in var_names])
 plt.xticks(var_inds,[i for i in var_names],rotation='vertical')
 plt.colorbar(shrink = 0.5)
-plt.xlim((-1,len(var_names)))
-plt.ylim((-1,len(var_names)))
+plt.xlim((-1,n_vars))
+plt.ylim((-1,n_vars))
 plt.show()
 
 print('Means by feature:')

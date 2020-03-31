@@ -11,18 +11,14 @@ Benchmark = PhenoBench()
 
 Benchmark.load(file = r'gen_data.csv')
 
-Benchmark.run()
+Benchmark.KMEANS_clusters = 2 # Optionally change number of KMEANS clusters
+
+Benchmark.run(dim_reduce='UMAP',cluster='HDBSCAN')
+Benchmark.plot_clusters();plt.show()
+# Benchmark.plot_clusters_example()
+
+Benchmark.run(dim_reduce='PCA',cluster='KMEANS')
+Benchmark.plot_clusters();plt.show()
+# Benchmark.plot_clusters_example()
 
 Benchmark.hopkins_test()
-
-plt.title('Colored by at least one report of loss of consciousness (1/0)')
-Benchmark.plot_clusters(labels = Benchmark.matrix['LOC_REPORTED'])
-
-plt.title('Colored by loss of consciousness duration (s)')
-Benchmark.plot_clusters(labels = Benchmark.matrix['LOC_DUR'])
-
-plt.title('Colored by TRAILS B results')
-Benchmark.plot_clusters(labels = Benchmark.matrix['TRAILS_B'])
-
-plt.title('Colored by HDBSCAN clustering')
-Benchmark.plot_clusters(labels = Benchmark.clust_pred_labels)

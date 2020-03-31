@@ -15,6 +15,12 @@ import scipy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from pyclustertend import hopkins
+from sklearn import decomposition
+from sklearn.cluster import KMeans
+
+font = {'family' : 'Arial',
+        'size'   : 9}
+mpl.rc('font', **font)
 
 class PhenoBench():
     
@@ -48,19 +54,16 @@ class PhenoBench():
         Benchmark = PhenoBench() 
         Benchmark.load(file = r'.../Data/gen_data.csv')
         Benchmark.run()
-        Benchmark.output()
         
         Example usage 2:
-        # Phenotyping with custom settings and no file writing
+        # Phenotyping with custom settings
         #----------------------------------------
             
         Benchmark = PhenoBench() 
         Benchmark.load(file = r'.../Data/TBI_data.sas7bdat')
         Benchmark.run(dim_reduce = 'UMAP',
                       cluster = 'HDBSCAN',
-                      reduce_nn =  30,
-                      cluster_nn = 20,
-                     )
+                      )
         Benchmark.output(write_settings = 1,
                          write_figures = 0,
                          write_tables = 1)
@@ -73,7 +76,7 @@ class PhenoBench():
         defaults = {'norm_vars':0, # optionally standard score all variables
                     'dim_reduce':'UMAP', # or GLRM, or PCA
                     'cluster':'HDBSCAN', # or KMEANS
-                    'KMEANS_clusters':3, # Only valid for cluster=KMEANS
+                    'KMEANS_clusters':2, # Only valid for cluster=KMEANS
                     'metric':'correlation', # UMAP settings
                     'reduce_nn':40, # UMAP settings
                     'min_d':0.1, # UMAP settings
@@ -124,58 +127,122 @@ class PhenoBench():
         print('Hopkins (>0.5 implies no clusters): ')
         print('%.4f' % hopkins_val)
         
-    def run(self):
+    def run(self, dim_reduce='UMAP', cluster='HDBSCAN'):
         
         if self.norm_vars == 0:
             print("Not normalizing features...")
+            
+        self.embedding = np.copy(self.matrix) # default is no embedding
         
-        self.perform_UMAP_embedding()
+        # Embedding control logic
+        if dim_reduce == 'UMAP':
+            print('Performing uniform manifold embedding...')
+            self.UMAP_embedding()
+            
+        if dim_reduce == 'PCA':
+            print('Performing PCA embedding...')
+            self.PCA()
+            
+        # Clustering control logic
+        if cluster == 'HDBSCAN':
+            print('Performing hierarchial density-based clustering...')
+            self.HDBSCAN_clusterer()
+            
+        if cluster == 'KMEANS':
+            print('Performing K-MEANS clustering...')
+            self.KMEANS_clusterer()
+
         
-        self.perform_HDBSCAN()
+    def UMAP_embedding(self):
+        # Perform N->2 dimensional uniform manifold embedding
         
-    def perform_UMAP_embedding(self):
+        embedding = umap.UMAP(random_state = self.rand_state,
+                                   n_neighbors = self.reduce_nn,
+                                   min_dist = self.min_d,
+                                   metric=self.metric).fit_transform(
+                                           self.matrix)
         
-        embedding = umap.UMAP(random_state=self.rand_state,
-                              n_neighbors = self.reduce_nn,
-                              min_dist = self.min_d,
-                              metric=self.metric).fit_transform(self.matrix)
+        self.embedding = np.copy(embedding)
         
-        self.UMAP_embedding = embedding
+    def PCA(self):
+        # Perform N->2 dimensional principal component reduction
         
-    def perform_HDBSCAN(self):
+        pca = decomposition.PCA(n_components=2)
+        pca.fit(self.matrix.values)
+        embedding = pca.transform(self.matrix.values)
+        
+        self.embedding = np.copy(embedding)
+
+    def HDBSCAN_clusterer(self):
         
         clusterer = hdbscan.HDBSCAN(
                 min_cluster_size=self.cluster_nn, 
-                min_samples=self.min_c).fit(self.UMAP_embedding)
+                min_samples=self.min_c).fit(self.embedding)
         
         self.clust_pred_labels = clusterer.labels_
+        
+    def KMEANS_clusterer(self):
 
-    def plot_unsupervised_embedding(self,save=1,nn=20,min_d=0.5,n_clu=10,min_c=1):
+        self.clust_pred_labels = KMeans(
+                n_clusters=self.KMEANS_clusters).fit_predict(self.embedding)
         
-        # Perform UMAP dimensionality reduction and HDBSCAN clustering...
-        # on the raw spectral matrices, plot cluster-colors of the embedded output
-        # Settings:
-        # nn = nearest neighbours of each observation to consider in the embedding
-        # n_clust = minimum number of observations of a single chemical type
-        # min_dist is the minimum distance between lower-space embedding points
-        # min_c should be set higher if we think there are noisy outsiders, e.g.10
-        try:
-            self.UMAP_embedding
-        except:
-            print('No embedding found, performing embedding in plot function...')
-            self.perform_UMAP_embedding(nn=nn, min_d=min_d)
+    def plot_clusters(self,labels=0):
         
         try:
-            self.clust_pred_labels
+            if labels == 0:
+                labels = self.clust_pred_labels
         except:
-            print('No clustering found, performing HDBSCAN in plot function...')
-            self.perform_HDBSCAN(n_clu=n_clu, min_c=min_c)
+            0
             
-        scatterplot_2D(self.UMAP_embedding,self.clust_pred_labels,save=1)
+        scatterplot_2D(self.embedding,labels,save=0)
         
-    def plot_clusters(self,labels):
+    def plot_clusters_example(self):
         
-        scatterplot_2D(self.UMAP_embedding,labels,save=0)
+        self.plot_clusters(labels=self.matrix['LOC_REPORTED'])
+        plt.title('Colored by: At least one LOC')
+        plt.show()
+        
+        self.plot_clusters(labels=self.matrix['LOC_DUR'])
+        plt.title('Colored by: LOC duration (s)')
+        plt.show()
+        
+        self.plot_clusters(labels=self.matrix['TRAILS_B'])
+        plt.title('Colored by: TRAILS B score')
+        plt.show()
+        
+        self.plot_clusters(labels=self.clust_pred_labels)
+        plt.title('Colored by: Clusterer predicted labels')
+        plt.show()
+    
+        # Color scatter plot an Y x 2 matrix with Y target labels of N classes
+        # Performed 4 times with different variables as colors
+#        x = self.UMAP_embedding[:,0]
+#        y = self.UMAP_embedding[:,1]
+#        
+#        fig, axs = plt.subplots(2, 2)
+#        axs[0, 0].set_title('Colored by: At least one LOC')
+#        axs[0, 0].set_xticks(ticks=[])
+#        axs[0, 0].scatter(x,y,c = self.matrix['LOC_REPORTED'],
+#           facecolors='none',edgecolors='k',cmap = 'bwr')
+#        #axs[0, 0].colorbar(shrink = 0.5)
+#        
+#        axs[1, 0].set_title('Colored by: LOC duration (s)')
+#        axs[1, 0].set_xticks(ticks=[])
+#        axs[1, 0].scatter(x,y,c = self.matrix['LOC_DUR'],
+#           facecolors='none',edgecolors='k',cmap = 'bwr')
+#        #axs[1, 0].colorbar(shrink = 0.5)
+#        
+#        axs[0, 1].set_title('Colored by: TRAILS B results')
+#        axs[0, 1].set_xticks(ticks=[])
+#        axs[0, 1].scatter(x,y,c = self.matrix['TRAILS_B'],
+#           facecolors='none',edgecolors='k',cmap = 'bwr')
+#        #axs[0, 1].colorbar(shrink = 0.5)
+#        
+#        axs[1, 1].set_title('Colored by: HDBSCAN clustering')
+#        axs[1, 1].set_xticks(ticks=[])
+#        axs[1, 1].scatter(x,y,c = self.clust_pred_labels,
+#           facecolors='none',edgecolors='k',cmap = 'bwr')
+#        plt.show()
         
 def scatterplot_2D(arr,targets,save):
 
@@ -188,7 +255,7 @@ def scatterplot_2D(arr,targets,save):
         plt.savefig('color_scatterplot.eps', format='eps')
         
     plt.colorbar()    
-    plt.show()
+    # plt.show()
 
 def test_train_inds(n_obs,train_split):
     
