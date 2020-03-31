@@ -5,14 +5,14 @@ Created on Thu Mar 26 14:09:41 2020
 @author: Eamonn Kennedy, Senior Research Scientist, TORCH lab, Univ. Utah, USA
 
 Use Cholesky decomposition to generate multivariate correlated pseudo 
-observations of some common TBI-associated variables, for algorithm testing.
+observations of some common TBI-associated variables for algorithm testing.
 
 The simulation population statistics (means, standard deviations) can be 
-defined in the included file: 'random_data_covariates.csv' 
-Current parameters are loosely based on typical values found in the literature.
+defined in the included file: 'random_data_covariates.csv' The current 
+parameters are loosely based on typical values found in the literature.
 
 The code contains hard-coded variable curation/truncation, and is not designed 
-for generic feature generation. It outputs 'gen_data.csv'
+for generic feature generation. It outputs 'gen_data.csv'.
 
 """
 
@@ -23,16 +23,16 @@ import matplotlib as mpl
 from scipy.stats import norm
 from scipy.linalg import cholesky
 
-mpl.rcParams['figure.dpi'] = 200 # Define output figure display/write DPI
+# USER INPUTS:
+seed = 0 # Hard coding of the random generating numpy seed (42).
+n_samples = 2000 # Define how many pseudo observations to generate (1000).
+output_filename = 'gen_data.csv' # Choose the output filename
 
-np.random.seed(seed=42) # Hard code the random seed seed
-
-n_samples = 1000 # How many pseudo observations to generate
-
-# Load desired means, stds, and covariances for the pseudo data variables
+# Load the multicovariates, means,std of the desired simulation output datra
 covs = pd.read_csv('random_data_covariates.csv')
 
 # Extract the covariance matrix and simulation means, stds, and freqs.
+np.random.seed(seed=seed)
 r = covs.values[2::,1::].astype(int) # Extract the matrix of covariates
 var_names = covs.columns[1::].values # Extract example variable names
 var_inds = np.arange(len(var_names)) # Extract list of variable indices
@@ -90,19 +90,14 @@ y[TSD,:] = np.round(y[TSD,:]).astype(int)
 
 # Set LOC REP and EPI as binary vars, and argmin(LOC_DUR) [minutes] to 1 sec.
 y[LOR,:] = 1*(y[LOR,:]>mean_freq[LOR])
-y[LOD,np.where(y[LOD]<0)[0]] = 1/60 # one second loss of consciousness min
+y[LOD,np.where(y[LOD]<0)[0]] = 0 # one second loss of consciousness min
 y[LOD,np.where(y[LOR,:]==0)] = 0 # if no LOC reported, then duration = 0
 y[NBI,np.where(y[NBI,:]<0)] = 0 # Negative values indicates no TBI events
-y[NBI,:] = np.ceil(y[NBI,:]).astype(int) # Set as integer events
-
+y[NBI,:] = np.round(y[NBI,:]).astype(int) # Set as integer events
+y[NBI,np.intersect1d(np.where(y[NBI]==0),np.where(y[LOR,:]>0))] = 1 
+# if LOC reported, we would expect at least 1 TBI
+y[LOD,:] = y[LOD,:]*(mean_freq[LOD]/np.mean(y[LOD,:]))
 y[EPI,:] = 1*(y[EPI,:]<np.percentile(y[EPI,:],100*mean_freq[EPI])) # freq EPI
-
-# Optionally plot the histogram of every variable
-for i in var_inds:
-    plt.hist(y[i,:])
-    plt.xlabel(var_names[i])
-    plt.ylabel('Count')
-    plt.show()
 
 corr_matrix = np.corrcoef(y)
 df = pd.DataFrame(data=np.transpose(y), index =  np.arange(n_samples))
@@ -110,7 +105,18 @@ df.columns = var_names
 
 df = df.astype(int)
 
+# Optionally plot the histogram of every variable
+#for i in var_inds:
+#    plt.hist(y[i,:])
+#    plt.xlabel(var_names[i])
+#    plt.ylabel('Count')
+#    plt.show()
+
+df.to_csv(output_filename,index=False)
+print('Wrote pseudodata file:',output_filename)
+
 # plot the correlation matrix of the output pseudodata
+mpl.rcParams['figure.dpi'] = 300 # Define output figure display/write DPI
 plt.imshow(corr_matrix,cmap='bwr',vmin=-1,vmax=1)
 plt.title('Pseudodata correlation colormap')
 plt.grid(False)
@@ -121,13 +127,14 @@ plt.xlim((-1,len(var_names)))
 plt.ylim((-1,len(var_names)))
 plt.show()
 
-df.corr()
-df.mean()
-df.std()
-df.head()
+print('Means by feature:')
+print(df.mean())
 
-
-df.to_csv(r'gen_data.csv')
+# Simulation validation checks vs csv file requests:
+#print(df.corr())
+#print(df.mean())
+#print(df.std())
+#print(df.head())
 
 # Plot various projections of the samples.
 #plt.plot(y[LOD],y[TRB],'.')

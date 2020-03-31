@@ -4,12 +4,8 @@ matplotlib
 seaborn
 scikit-learn
 scipy
-
-# pip install category-encoders
-#category_encoders
-
-# conda install -c conda-forge umap-learn
 umap-learn
-
-# conda install -c conda-forge hdbscan
 hdbscan
+
+# pip install pyclustertend # - please run separately.
+# pip install category-encoders
