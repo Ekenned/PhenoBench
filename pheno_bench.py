@@ -15,8 +15,11 @@ import scipy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from pyclustertend import hopkins
+from pyclustertend import vat
 from sklearn import decomposition
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+from sklearn.preprocessing import StandardScaler
 
 font = {'family' : 'Arial',
         'size'   : 9}
@@ -48,38 +51,43 @@ class PhenoBench():
         - Methods for autogeneration of figures and tables
         
         Example usage 1: 
-        # Phenotyping with recommended settings and file writing
+        Phenotyping with default settings:
         #----------------------------------------
             
         Benchmark = PhenoBench() 
-        Benchmark.load(file = r'.../Data/gen_data.csv')
+        Benchmark.load(file = r'gen_data.csv')
         Benchmark.run()
+        Benchmark.plot_clusters()
+        Benchmark.report_statistics()
+        
         
         Example usage 2:
-        # Phenotyping with custom settings
+        Phenotyping with custom settings and mixed methods:
         #----------------------------------------
             
         Benchmark = PhenoBench() 
-        Benchmark.load(file = r'.../Data/TBI_data.sas7bdat')
+        Benchmark.load(file = r'gen_data.csv')
+        Benchmark.reduce_nn = 5
+        Benchmark.KMEANS_clusters = 5
         Benchmark.run(dim_reduce = 'UMAP',
-                      cluster = 'HDBSCAN',
+                      cluster = 'KMEANS',
                       )
-        Benchmark.output(write_settings = 1,
-                         write_figures = 0,
-                         write_tables = 1)
+        Benchmark.plot_clusters_example()
+        Benchmark.report_statistics()
+        Benchmark.plot_vat() # visual assessment of tendency takes several mins
         
     """
     
     def __init__(self):
         
-        # Assign default settings
-        defaults = {'norm_vars':0, # optionally standard score all variables
+        # Assign default settings in a dictionary
+        defaults = {'norm_vars':1, # optionally standard score all variables
                     'dim_reduce':'UMAP', # or GLRM, or PCA
                     'cluster':'HDBSCAN', # or KMEANS
                     'KMEANS_clusters':2, # Only valid for cluster=KMEANS
-                    'metric':'correlation', # UMAP settings
-                    'reduce_nn':40, # UMAP settings
-                    'min_d':0.1, # UMAP settings
+                    'metric':'euclidean', # UMAP settings 'correlation'
+                    'reduce_nn':20, # UMAP settings
+                    'min_d':0.05, # UMAP settings
                     'min_c':20, # HDBSCAN settings
                     'cluster_nn':30, # HDBSCAN settings
                     'write_settings':1, # output toggle
@@ -88,7 +96,7 @@ class PhenoBench():
                     'rand_state':0 # default state for random seeds
                     }
         
-        # Inherit defaults to class
+        # Inherit defaults as class variables
         self.norm_vars = defaults['norm_vars'] 
         self.dim_reduce = defaults['dim_reduce']
         self.cluster = defaults['cluster']
@@ -104,33 +112,49 @@ class PhenoBench():
         self.rand_state = defaults['rand_state']
         self.settings = defaults
         
+    
+    # Class method definitions
+    ######################################################  
+    
     def print_settings(self):
         
         [print(i[0],':',i[1]) for i in zip(
                 self.settings.keys(),self.settings.values())][0]
-        
+
     def load(self,file):
         
         self.matrix = pd.read_csv(file)
+        
         # Check if data has nans or strings, perform imputation, 
         self.validate_data()
     
     def validate_data(self):
         0
-        # Check if data has nans or strings, perform imputation, 
+        # Check if data has nans or strings, perform imputation,
         
-    def hopkins_test(self):
+    def rescale_data(self):
         
-        hopkins_val = hopkins(
-                self.matrix.values,np.shape(self.matrix.values)[0])
+        scaler = StandardScaler()
+        tmp = scaler.fit_transform(self.matrix) 
+        self.matrix = pd.DataFrame(data=tmp, columns=self.matrix.columns)
         
-        print('Hopkins (>0.5 implies no clusters): ')
-        print('%.4f' % hopkins_val)
-        
+    # Dimensionality reduction and clustering methods
+    ######################################################  
+
     def run(self, dim_reduce='UMAP', cluster='HDBSCAN'):
         
+        # Keep track of what has been run
+        self.reduction_performed = 0
+        self.normalization_performed = 0
+        self.clustering_performed = 0
+        
+        # Standard scoring control logic
         if self.norm_vars == 0:
             print("Not normalizing features...")
+        else:
+            print("Normalizing features...")
+            self.rescale_data()
+            self.normalization_performed = 1
             
         self.embedding = np.copy(self.matrix) # default is no embedding
         
@@ -138,21 +162,24 @@ class PhenoBench():
         if dim_reduce == 'UMAP':
             print('Performing uniform manifold embedding...')
             self.UMAP_embedding()
+            self.reduction_performed = 1
             
         if dim_reduce == 'PCA':
             print('Performing PCA embedding...')
             self.PCA()
+            self.reduction_performed = 1
             
         # Clustering control logic
         if cluster == 'HDBSCAN':
             print('Performing hierarchial density-based clustering...')
             self.HDBSCAN_clusterer()
+            self.clustering_performed = 1
             
         if cluster == 'KMEANS':
             print('Performing K-MEANS clustering...')
             self.KMEANS_clusterer()
+            self.clustering_performed = 1
 
-        
     def UMAP_embedding(self):
         # Perform N->2 dimensional uniform manifold embedding
         
@@ -186,6 +213,37 @@ class PhenoBench():
         self.clust_pred_labels = KMeans(
                 n_clusters=self.KMEANS_clusters).fit_predict(self.embedding)
         
+    # Evaluation methods
+    ###################################################### 
+    
+    def plot_vat(self):
+        print('Visualizing tendency, this may take several minutes...')
+        vat(self.matrix)
+        
+    def report_statistics(self):
+        
+        print('----------------------')
+        self.hopkins_test()
+        self.silhoutte_test()
+        print('----------------------')
+        
+    def silhoutte_test(self):
+        
+        ss = silhouette_score(
+                self.embedding, self.clust_pred_labels, metric='euclidean')
+        
+        print('Silhoutte score: ','%.4f' % ss)
+    
+    def hopkins_test(self):
+        
+        hopkins_val = hopkins(
+                self.matrix,np.shape(self.matrix.values)[0])
+        
+        print('Hopkins score: ','%.4f' % hopkins_val)
+        
+    # Plotting methods
+    ###################################################### 
+        
     def plot_clusters(self,labels=0):
         
         try:
@@ -210,39 +268,32 @@ class PhenoBench():
         plt.title('Colored by: TRAILS B score')
         plt.show()
         
+        self.plot_clusters(labels=self.matrix['AGE'])
+        plt.title('Colored by: AGE')
+        plt.show()
+        
+        self.plot_clusters(labels=self.matrix['PCLM_SCORE'])
+        plt.title('Colored by: PCLM_SCORE')
+        plt.show()
+        
+        self.plot_clusters(labels=self.matrix['N_TBI'])
+        plt.title('Colored by: N_TBI')
+        plt.show()
+        
+        self.plot_clusters(labels=self.matrix['N_TBI'])
+        plt.title('Colored by: N_TBI')
+        plt.show()
+        
+        self.plot_clusters(labels=self.matrix['EPILEPSY'])
+        plt.title('Colored by: EPILEPSY')
+        plt.show()
+        
         self.plot_clusters(labels=self.clust_pred_labels)
         plt.title('Colored by: Clusterer predicted labels')
         plt.show()
     
-        # Color scatter plot an Y x 2 matrix with Y target labels of N classes
-        # Performed 4 times with different variables as colors
-#        x = self.UMAP_embedding[:,0]
-#        y = self.UMAP_embedding[:,1]
-#        
-#        fig, axs = plt.subplots(2, 2)
-#        axs[0, 0].set_title('Colored by: At least one LOC')
-#        axs[0, 0].set_xticks(ticks=[])
-#        axs[0, 0].scatter(x,y,c = self.matrix['LOC_REPORTED'],
-#           facecolors='none',edgecolors='k',cmap = 'bwr')
-#        #axs[0, 0].colorbar(shrink = 0.5)
-#        
-#        axs[1, 0].set_title('Colored by: LOC duration (s)')
-#        axs[1, 0].set_xticks(ticks=[])
-#        axs[1, 0].scatter(x,y,c = self.matrix['LOC_DUR'],
-#           facecolors='none',edgecolors='k',cmap = 'bwr')
-#        #axs[1, 0].colorbar(shrink = 0.5)
-#        
-#        axs[0, 1].set_title('Colored by: TRAILS B results')
-#        axs[0, 1].set_xticks(ticks=[])
-#        axs[0, 1].scatter(x,y,c = self.matrix['TRAILS_B'],
-#           facecolors='none',edgecolors='k',cmap = 'bwr')
-#        #axs[0, 1].colorbar(shrink = 0.5)
-#        
-#        axs[1, 1].set_title('Colored by: HDBSCAN clustering')
-#        axs[1, 1].set_xticks(ticks=[])
-#        axs[1, 1].scatter(x,y,c = self.clust_pred_labels,
-#           facecolors='none',edgecolors='k',cmap = 'bwr')
-#        plt.show()
+# Misc functions
+###################################################### 
         
 def scatterplot_2D(arr,targets,save):
 
@@ -289,21 +340,6 @@ def closestVal(Vec,p):
     minInd = np.where(tempVec == np.min(tempVec))[0][0]
     minVal = Vec[minInd]
     return minInd,minVal
-
-def normalize_vector(vec):
-    
-    # Normalize a 1D vector to values between 0 and 1
-    
-    if (vec.ndim != 1):
-        
-        print('Could not normalize vector, input must be a 1D numpy array')
-        norm_vec = 0
-        
-    else:
-        
-        norm_vec = ( vec - np.min(vec) ) / ( np.max(vec) - np.min(vec) )
-    
-    return norm_vec
 
 def gini(array):
     

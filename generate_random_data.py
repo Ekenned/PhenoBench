@@ -28,7 +28,7 @@ seed = 4 # Hard coding of the random generating numpy seed (42).
 n_samples = 1000 # Define how many pseudo observations to generate (1000).
 output_filename = 'gen_data.csv' # Choose the output filename
 input_filename = 'random_data_covariates.csv'
-DPI = 300 # dots per inch for displayed figure
+DPI = 100 # dots per inch for displayed figure
 
 # Settings
 mpl.rcParams['figure.dpi'] = DPI # Define output figure display/write DPI

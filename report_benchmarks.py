@@ -6,19 +6,21 @@ Created on Mon Mar 30 17:21:12 2020
 """
 
 from pheno_bench import PhenoBench
+import matplotlib.pyplot as plt
 
 Benchmark = PhenoBench() 
 
 Benchmark.load(file = r'gen_data.csv')
 
-Benchmark.KMEANS_clusters = 2 # Optionally change number of KMEANS clusters
-
-Benchmark.run(dim_reduce='UMAP',cluster='HDBSCAN')
-Benchmark.plot_clusters();plt.show()
-# Benchmark.plot_clusters_example()
+# Benchmark.print_settings() # Print all options which can be set manually
+# Benchmark.KMEANS_clusters = 2 # Example setting change: Num KMEANS clusters
 
 Benchmark.run(dim_reduce='PCA',cluster='KMEANS')
-Benchmark.plot_clusters();plt.show()
-# Benchmark.plot_clusters_example()
+Benchmark.plot_clusters();plt.title('PCA and Kmeans (basic)');plt.show()
+Benchmark.report_statistics()
 
-Benchmark.hopkins_test()
+Benchmark.run(dim_reduce='UMAP',cluster='HDBSCAN')
+Benchmark.plot_clusters();plt.title('UMAP and HDBSCAN (advanced)');plt.show()
+Benchmark.report_statistics()
+
+# Benchmark.plot_clusters_example() # Explore detailed trends in clusters
