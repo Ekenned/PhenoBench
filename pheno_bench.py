@@ -85,6 +85,7 @@ class PhenoBench():
                     'dim_reduce':'UMAP', # or GLRM, or PCA
                     'cluster':'HDBSCAN', # or KMEANS
                     'KMEANS_clusters':2, # Only valid for cluster=KMEANS
+                    'split':0, # Choose a split fraction e.g. stability testing
                     'metric':'euclidean', # UMAP settings 'correlation'
                     'reduce_nn':20, # UMAP settings
                     'min_d':0.05, # UMAP settings
@@ -101,6 +102,7 @@ class PhenoBench():
         self.dim_reduce = defaults['dim_reduce']
         self.cluster = defaults['cluster']
         self.KMEANS_clusters = defaults['KMEANS_clusters']
+        self.split = defaults['split']
         self.min_d = defaults['min_d']
         self.min_c = defaults['min_c']
         self.reduce_nn = defaults['reduce_nn']
@@ -116,7 +118,7 @@ class PhenoBench():
     # Class method definitions
     ######################################################  
     
-    def print_settings(self):
+    def print_settings(self): # try "Benchmark.print_settings()"
         
         [print(i[0],':',i[1]) for i in zip(
                 self.settings.keys(),self.settings.values())][0]
@@ -125,8 +127,21 @@ class PhenoBench():
         
         self.matrix = pd.read_csv(file)
         
+        self.n_obs = np.shape(self.matrix)[0] # get the basic data dimensions
+        self.n_vars = np.shape(self.matrix)[1]
+        
         # Check if data has nans or strings, perform imputation, 
         self.validate_data()
+        
+    def split_matrix(self):
+        
+        split_inds = test_train_inds(self.n_obs,self.split)
+        self.left_split_inds = np.sort(split_inds[0])
+        self.right_split_inds = np.sort(split_inds[1])
+
+        self.orig_matrix = self.matrix.copy()
+        self.matrix = self.orig_matrix.iloc[self.left_split_inds]
+        self.remainder_matrix = self.orig_matrix.iloc[self.right_split_inds]
     
     def validate_data(self):
         0
@@ -141,7 +156,12 @@ class PhenoBench():
     # Dimensionality reduction and clustering methods
     ######################################################  
 
-    def run(self, dim_reduce='UMAP', cluster='HDBSCAN'):
+    def run(self, dim_reduce='UMAP', cluster='HDBSCAN',split=0):
+        
+        # Control logic for splitting the data
+        if split  != 0:
+            self.split = split
+            self.split_matrix()
         
         # Keep track of what has been run
         self.reduction_performed = 0
@@ -202,8 +222,16 @@ class PhenoBench():
 
     def HDBSCAN_clusterer(self):
         
-        clusterer = hdbscan.HDBSCAN(
+        try:
+            
+            clusterer = hdbscan.HDBSCAN(
                 min_cluster_size=self.cluster_nn, 
+                min_samples=self.min_c).fit(self.embedding)
+            
+        except:
+        
+            clusterer = hdbscan.HDBSCAN(
+                min_cluster_size=self.cluster_nn[0], 
                 min_samples=self.min_c).fit(self.embedding)
         
         self.clust_pred_labels = clusterer.labels_
@@ -274,10 +302,6 @@ class PhenoBench():
         
         self.plot_clusters(labels=self.matrix['PCLM_SCORE'])
         plt.title('Colored by: PCLM_SCORE')
-        plt.show()
-        
-        self.plot_clusters(labels=self.matrix['N_TBI'])
-        plt.title('Colored by: N_TBI')
         plt.show()
         
         self.plot_clusters(labels=self.matrix['N_TBI'])

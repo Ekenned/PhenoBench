@@ -13,14 +13,13 @@ Benchmark = PhenoBench()
 Benchmark.load(file = r'gen_data.csv')
 
 # Benchmark.print_settings() # Print all options which can be set manually
-# Benchmark.KMEANS_clusters = 2 # Example setting change: Num KMEANS clusters
-
-Benchmark.run(dim_reduce='PCA',cluster='KMEANS')
-Benchmark.plot_clusters();plt.title('PCA and Kmeans (basic)');plt.show()
+Benchmark.KMEANS_clusters = 3 # Example setting change: Num KMEANS clusters
+Benchmark.run(dim_reduce='PCA',cluster='KMEANS') #,split=0.5) # split to bootst
+Benchmark.plot_clusters();plt.title('PCA and Kmeans (low accuracy)');plt.show()
 Benchmark.report_statistics()
 
 Benchmark.run(dim_reduce='UMAP',cluster='HDBSCAN')
-Benchmark.plot_clusters();plt.title('UMAP and HDBSCAN (advanced)');plt.show()
+Benchmark.plot_clusters();plt.title('UMAP and HDBSCAN (high accuracy)');plt.show()
 Benchmark.report_statistics()
 
-# Benchmark.plot_clusters_example() # Explore detailed trends in clusters
+# Benchmark.plot_clusters_example() # Uncomment to explore phenotypes in clusts
