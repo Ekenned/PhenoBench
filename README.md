@@ -14,7 +14,7 @@ The benefits of developing your study with PhenoBench are:
 
 1. Install the freeware [Anaconda](https://www.anaconda.com/download/?lang=en-us) for Python 3.x.
 2. Download the free Github desktop client. Clone the master branch to your local computer (also see *Git Convention*).
-3. (Search for) and open anaconda prompt, to create and activate a new environment (called Phenobench here) by running: 
+3. (Search for) and open anaconda prompt, to create and activate a new environment (e.g. called Phenobench here) by running: 
 
 "conda create --name PhenoBench" and afterwards, activate it by running: "conda activate PhenoBench"
 

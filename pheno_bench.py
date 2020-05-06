@@ -126,10 +126,14 @@ class PhenoBench():
     def load(self,file):
         
         self.matrix = pd.read_csv(file)
+  
+        # Check if data has nans or strings, perform imputation, 
+        self.validate_data()
         
-        self.n_obs = np.shape(self.matrix)[0] # get the basic data dimensions
-        self.n_vars = np.shape(self.matrix)[1]
+    def set_data(self,df):
         
+        self.matrix = df
+  
         # Check if data has nans or strings, perform imputation, 
         self.validate_data()
         
@@ -144,7 +148,9 @@ class PhenoBench():
         self.remainder_matrix = self.orig_matrix.iloc[self.right_split_inds]
     
     def validate_data(self):
-        0
+        
+        self.n_obs = np.shape(self.matrix)[0] # get the basic data dimensions
+        self.n_vars = np.shape(self.matrix)[1]
         # Check if data has nans or strings, perform imputation,
         
     def rescale_data(self):
