@@ -23,11 +23,6 @@ import matplotlib as mpl
 from scipy.stats import norm
 from scipy.linalg import cholesky
 
-# Set decimal places for print
-def print(*args):
-    __builtins__.print(*("%.3f" % a if isinstance(a, float) else a
-                         for a in args))
-
 # USER INPUTS:
 seed = 4 # Hard coding of the random generating numpy seed (42).
 n_samples = 1000 # Define how many pseudo observations to generate (1000).
