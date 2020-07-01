@@ -6,12 +6,8 @@ Created on Thu Mar 26 14:12:43 2020
 """
 import numpy as np
 import pandas as pd
-import sklearn
-import os
-import seaborn
 import umap
 import hdbscan
-import scipy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from pyclustertend import hopkins
@@ -355,40 +351,3 @@ def test_train_inds(n_obs,train_split):
         test_inds = np.array([])
 
     return train_inds,test_inds
-
-def logistic(x):
-    
-    # logit function 
-    
-    return 1 / (1 + np.exp(-x))
-
-def closestVal(Vec,p):
-    
-    # find the index of the closest value to p contained in the vector 'Vec'
-    
-    tempVec = np.abs(Vec - p)
-    minInd = np.where(tempVec == np.min(tempVec))[0][0]
-    minVal = Vec[minInd]
-    return minInd,minVal
-
-def gini(array):
-    
-    """Calculate the Gini coefficient of a numpy array."""
-    
-    # based on bottom eq:
-    # http://www.statsdirect.com/help/generatedimages/equations/equation154.svg
-    # All values are treated equally, arrays must be 1d:
-    array = array.flatten()
-    if np.amin(array) < 0:
-        # Values cannot be negative:
-        array -= np.amin(array)
-    # Values cannot be 0:
-    array += 0.0000001
-    # Values must be sorted:
-    array = np.sort(array)
-    # Index per array element:
-    index = np.arange(1,array.shape[0]+1)
-    # Number of array elements:
-    n = array.shape[0]
-    # Gini coefficient:
-    return ((np.sum((2 * index - n  - 1) * array)) / (n * np.sum(array)))
