@@ -15,6 +15,7 @@ from pyclustertend import vat
 from sklearn import decomposition
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
+from sklearn.metrics import f1_score
 from sklearn.preprocessing import StandardScaler
 
 font = {'family' : 'Arial',

@@ -27,8 +27,7 @@ Benchmark.report_statistics()
 
 Benchmark.calc_phenotypes(selected_df = "mean_ratio")
 
-Benchmark.phenotype_df.drop(columns="mean_TRAILS_A")
-Benchmark.phenotype_df.drop(columns="mean_TRAILS_A")
-Benchmark.phenotype_df.drop(columns="mean_TRAILS_A")Benchmark.phenotype_df.drop(columns="mean_TRAILS_A")
+Benchmark.phenotype_df = Benchmark.phenotype_df.drop(
+    columns=["mean_TRAILS_B","mean_RACE","mean_EDUCATION"]).copy()
 
 Benchmark.plot_multi_radar()
