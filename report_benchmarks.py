@@ -13,13 +13,22 @@ Benchmark = PhenoBench()
 Benchmark.load(file = r'gen_data.csv')
 
 # Benchmark.print_settings() # Print all options which can be set manually
-Benchmark.KMEANS_clusters = 3 # Example setting change: Num KMEANS clusters
+Benchmark.settings['KMEANS_clusters'] = 4 # Example setting change: n clusters
 Benchmark.run(dim_reduce='PCA',cluster='KMEANS') #,split=0.5) # split to bootst
-Benchmark.plot_clusters();plt.title('PCA and Kmeans (low accuracy)');plt.show()
+Benchmark.plot_clusters();plt.title('PCA and Kmeans');plt.show()
 Benchmark.report_statistics()
 
-Benchmark.run(dim_reduce='UMAP',cluster='HDBSCAN')
-Benchmark.plot_clusters();plt.title('UMAP and HDBSCAN (high accuracy)');plt.show()
+# Benchmark.print_settings() # Print all options which can be set manually
+Benchmark.run(dim_reduce='UMAP',cluster='HDBSCAN') #,split=0.5) # split to bootst
+Benchmark.plot_clusters();plt.title('HDBSCAN and UMAP');plt.show()
 Benchmark.report_statistics()
 
 # Benchmark.plot_clusters_example() # Uncomment to explore phenotypes in clusts
+
+Benchmark.calc_phenotypes(selected_df = "mean_ratio")
+
+Benchmark.phenotype_df.drop(columns="mean_TRAILS_A")
+Benchmark.phenotype_df.drop(columns="mean_TRAILS_A")
+Benchmark.phenotype_df.drop(columns="mean_TRAILS_A")Benchmark.phenotype_df.drop(columns="mean_TRAILS_A")
+
+Benchmark.plot_multi_radar()
