@@ -18,10 +18,6 @@ from sklearn.metrics import silhouette_score
 from sklearn.metrics import f1_score
 from sklearn.preprocessing import StandardScaler
 
-font = {'family' : 'Arial',
-        'size'   : 9}
-mpl.rc('font', **font)
-
 class PhenoBench():
     
     """
@@ -80,18 +76,23 @@ class PhenoBench():
     """
     
     def __init__(self):
-        
+
+        # set font settings
+        font = {'family' : 'Arial',
+        'size'   : 9}
+        mpl.rc('font', **font)
+
         # Assign default settings in a dictionary
         self.settings = {
         'norm_vars':1, # optionally standard score all variables
-        'dim_reduce':'UMAP', # or GLRM, or PCA
-        'cluster':'HDBSCAN', # or KMEANS
-        'KMEANS_clusters':2, # Only valid for cluster=KMEANS
+        'dim_reduce':'UMAP', # UMAP, PCA
+        'cluster':'HDBSCAN', # HDBSCAN, KMEANS
+        'KMEANS_clusters':2, # Only used when cluster=KMEANS
         'split':None, # Choose a split fraction e.g. 0.5, for stability testing
-        'rand_state':42, # default state for random seeds
+        'rand_state':42, # default state for random seed
         'split_side':'left', # Select which side of the split data to analyze
-        'metric':'euclidean', # UMAP settings 'correlation'
-        'n_neighbors':50, # UMAP settings
+        'metric':'euclidean', # UMAP settings, euclidean or correlation
+        'n_neighbors':50, # Number of observation neighbours for comparison
         'min_d':0.05, # UMAP settings
         'min_samples':30, # HDBSCAN settings
         'min_cluster_size':30, # HDBSCAN settings
@@ -99,7 +100,7 @@ class PhenoBench():
         }
     
     def print_settings(self): 
-        # Function to print settings, e.g. "Benchmark.print_settings()"   
+        # Print default or updated list of settings"   
 
         zip_settings = zip(self.settings.keys(), self.settings.values())
         [print(i[0],':',i[1]) for i in zip_settings][0]
@@ -108,12 +109,14 @@ class PhenoBench():
     ###################################################### 
 
     def load(self,file):
+        # Load the data from a csv file
         
         self.raw_df = pd.read_csv(file)
   
         self.validate_data()
         
     def set_data(self,df):
+        # Use some pre-existing pandas dataframe, df, as the data
         
         self.raw_df = df
   
