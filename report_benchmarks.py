@@ -25,9 +25,13 @@ Benchmark.report_statistics()
 
 # Benchmark.plot_clusters_example() # Uncomment to explore phenotypes in clusts
 
-Benchmark.calc_phenotypes(selected_df = "mean_ratio")
+# Calculate the phenotypes of each cluster (mean by default, median + avail.)
+Benchmark.calc_phenotypes()
+# Benchmark.phenotypes.to_csv('phenotypes.csv') # optionall save them
 
+# Drop a few variables for easier visualization
 Benchmark.phenotype_df = Benchmark.phenotype_df.drop(
     columns=["mean_TRAILS_B","mean_RACE","mean_EDUCATION"]).copy()
 
 Benchmark.plot_multi_radar()
+

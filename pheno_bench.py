@@ -318,11 +318,15 @@ class PhenoBench():
         self.group_letters = [i for i in alphabet[0:self.n_clusts]]
         self.subplot_l()
 
-    def calc_phenotypes(self, selected_df = "out", func = "mean",):
-        # Calculate the statistical property for each cluster for the selected dataframe
+    def calc_phenotypes(self, 
+                        selected_df = "mean_ratio", 
+                        func = "mean",
+                        display_phenotypes = 1,
+                        ):
+        # Calculate the statistical tarit properties for each cluster label
 
-
-        # Select the dataframe for evaluating phenotypes, we could use the raw, or standardized, etc.
+        # Select the dataframe for evaluating phenotypes, 
+        # we could use the raw, or standardized, etc.
         if selected_df == "out":
             M = self.out_df
         elif selected_df == "mean_ratio": # divide by mean per variable
@@ -334,23 +338,40 @@ class PhenoBench():
         else:
             M = self.raw_df # default to the raw dataframe
 
-        # instantiate a phentype dataframe
+        # instantiate a phenotype dataframe, and ratioed dataframe
         phenotype_df = pd.DataFrame(data = self.clusts,columns=[self.merge_col])
 
-        # For ever trait in the raw dataframe, calculate the mean (or other stat) for each cluster
+        # For every trait in the dataframe, 
+        # calculate the mean (or other stat) for each cluster
         for i in self.traits:
             
-            iterate_df = group_stats(M = M,
-                        variable = i, # variable to test for phenotype
-                        clustcol = self.clust_varname, # cluster variable
+            i_df = group_stats(M = M,
+                        variable = i, # variable to test as a phenotype
+                        clustcol = self.clust_varname, # string to call cluster
                         func = func, # choice of func, e.g. "median" ,"std" , "min", ...
                         )
             
-            phenotype_df = pd.merge(phenotype_df,iterate_df,on=self.merge_col)
+            phenotype_df = pd.merge(phenotype_df,i_df,on=self.merge_col)
             
+        #for i in self.traits:   
         # phenotype_df.drop(columns = [func + "_" + self.clust_varname])
 
         self.phenotype_df = phenotype_df.copy()
+        
+        # make a new array of the means for the whole sample, with phenotypes as index
+        sample_varnames = self.phenotype_df.columns.values
+        sample_means = np.insert(self.df_means.values.astype(object),0,'whole sample')
+        sample_series = pd.Series(data = sample_means, index = sample_varnames)
+
+        # Recover the raw phenotype values from the mean-normalized values
+        multiply_means = np.insert(self.df_means.values.astype(object),0,1)
+        raw_df_list = self.phenotype_df*multiply_means
+
+        # Append the whole samples mean series with the phenotype df
+        self.phenotypes = raw_df_list.append(sample_series,ignore_index=True)
+        
+        if display_phenotypes == 1:
+            print(self.phenotypes)
 
     def subplot_l(self, l = range(1,8)):
     
@@ -444,7 +465,7 @@ class PhenoBench():
         ax.set_theta_direction(-1)
          
         # Draw one axe per variable + add labels labels yet
-        plt.xticks(angles[:-1], categories, color='grey', alpha=0.5,size=4)
+        plt.xticks(angles[:-1], categories, color='black',size=4)
          
         # Draw ylabels
         ax.set_rlabel_position(0)
@@ -531,7 +552,7 @@ def test_train_inds(n_obs,train_split,seed=0):
     return train_inds,test_inds
 
 def group_stats(M,
-                variable = "var2", 
+                variable = "var1", 
                 clustcol = "clust",
                 func = "mean", # "median" ,"std" , "min", ...
                 ):
