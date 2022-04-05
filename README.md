@@ -1,6 +1,7 @@
 # PhenoBench
 
-This is an in-progress suite of software tools built by the Utah TORCH lab for benchmarking TBI phenotyping studies.
+Phenotyping suite for:
+Pugh MJ, Kennedy E, Prager EM, Humpherys J, Dams-O'Connor K, et al. Phenotyping the Spectrum of Traumatic Brain Injury: A Review and Pathway to Standardization. J Neurotrauma. 2021 Dec;38(23):3222-3234. doi: 10.1089/neu.2021.0059. Epub 2021 Jun 10. PMID: 33858210; PMCID: PMC8917880.
 
 PhenoBench is written in Python 3.x, and requires some python scientific computing libraries (see requirements.txt, or installation instructions for new users).
 
