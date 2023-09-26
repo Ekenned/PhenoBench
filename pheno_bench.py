@@ -10,8 +10,8 @@ import umap
 import hdbscan
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from pyclustertend import hopkins
-from pyclustertend import vat
+# from pyclustertend import hopkins
+# from pyclustertend import vat
 from sklearn import decomposition
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
@@ -127,7 +127,7 @@ class PhenoBench():
         
         self.n_obs = np.shape(self.raw_df)[0] # get the basic data dimensions
         self.n_vars = np.shape(self.raw_df)[1]
-        self.df_means = self.raw_df.mean()
+        # self.df_means = self.raw_df.mean()
         self.traits = [i for i in self.raw_df.columns]
         
     def split_df(self,):
@@ -145,13 +145,15 @@ class PhenoBench():
 
     def rescale_data(self):
         
-        if self.settings['splitting_performed'] == 1:
-            prescaled_data = self.s_df # use split data
-        else:
-            prescaled_data = self.raw_df # use raw data
+        # if self.settings['splitting_performed'] == 1:
+        #     prescaled_data = self.s_df # use split data
+        # else:
+        #     prescaled_data = self.raw_df # use raw data
         scaler = StandardScaler()
-        self.rescaled_df = pd.DataFrame(data=scaler.fit_transform(prescaled_data), 
-            columns=prescaled_data.columns,)
+        # self.rescaled_df = pd.DataFrame(data=scaler.fit_transform(prescaled_data), 
+        #     columns=prescaled_data.columns,)
+        self.rescaled_df = pd.DataFrame(data=scaler.fit_transform(self.arr), 
+            columns=self.arr.columns,)
         
     # "Run" contains 1. Splitting 2. Normalization, 3. Embedding, 4. Clustering
     ######################################################  
@@ -205,12 +207,17 @@ class PhenoBench():
         Both rescaled_df and raw_df just become "df" after this step
         Default is to standard score (Benchmark.settings['norm_vars']=1)
         """
+        if self.settings['splitting_performed'] == 1:
+            self.arr = self.s_df.copy() # use split data
+        else:
+            self.arr = self.raw_df.copy() # use raw data
+            
         if self.settings['norm_vars'] == 0:
             print("Not normalizing features...")
-            if self.settings['splitting_performed'] == 1:
-                self.arr = np.copy(self.s_df) # use split data
-            else:
-                self.arr = np.copy(self.raw_df) # use raw data
+            # if self.settings['splitting_performed'] == 1:
+            #     self.arr = np.copy(self.s_df) # use split data
+            # else:
+            #     self.arr = np.copy(self.raw_df) # use raw data
         else:
             print("Standard scoring features...")
             self.rescale_data()
@@ -240,6 +247,7 @@ class PhenoBench():
         Provides the option to perform clustering on the embedding
         using different methods. 
         """
+        
         if self.settings['cluster'] == 'HDBSCAN':
             print('Performing hierarchial density-based clustering...')
             self.HDBSCAN_clusterer()
@@ -311,7 +319,10 @@ class PhenoBench():
         self.classified = np.where(self.clust_labels>=0)[0] # classified cases
         self.clusts = np.unique(self.clust_labels[self.classified])
         self.n_clusts = len(self.clusts)
-        self.out_df = self.raw_df.copy()
+        if self.settings['splitting_performed'] == 1:
+            self.out_df = self.s_df.copy()
+        else:
+            self.out_df = self.raw_df.copy()
         self.out_df[self.clust_varname] = self.clust_labels
 
         alphabet = 10*'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -319,7 +330,7 @@ class PhenoBench():
         self.subplot_l()
 
     def calc_phenotypes(self, 
-                        selected_df = "mean_ratio", 
+                        selected_df = "out", 
                         func = "mean",
                         display_phenotypes = 1,
                         ):
@@ -333,43 +344,48 @@ class PhenoBench():
             self.mean_ratio_df = self.out_df.div(self.out_df.mean()).copy()
             self.mean_ratio_df[self.clust_varname] = self.clust_labels
             M = self.mean_ratio_df.copy()
-        elif selected_df == "standardized":
-            M = self.s_df
+        # elif selected_df == "standardized":
+        #     M = self.out_df
         else:
-            M = self.raw_df # default to the raw dataframe
+            M = self.out_df # default to the raw dataframe
 
         # instantiate a phenotype dataframe, and ratioed dataframe
         phenotype_df = pd.DataFrame(data = self.clusts,columns=[self.merge_col])
 
         # For every trait in the dataframe, 
         # calculate the mean (or other stat) for each cluster
+        
+        
         for i in self.traits:
             
-            i_df = group_stats(M = M,
+            self.i_df = group_stats(M = M,
                         variable = i, # variable to test as a phenotype
                         clustcol = self.clust_varname, # string to call cluster
                         func = func, # choice of func, e.g. "median" ,"std" , "min", ...
                         )
             
-            phenotype_df = pd.merge(phenotype_df,i_df,on=self.merge_col)
-            
+            phenotype_df = pd.merge(phenotype_df,self.i_df,on=self.merge_col)
+        
+        # All of this for getting count of each cluster
+        counts = M.groupby(self.clust_varname).size().to_frame('count').reset_index().rename(columns = {'CLUSTER':'group_ID'})
+        phenotype_df_with_counts = pd.merge(phenotype_df,counts,on=self.merge_col)
         #for i in self.traits:   
         # phenotype_df.drop(columns = [func + "_" + self.clust_varname])
-
+        # phenotype_df = pd.merge(phenotype_df,counts,on=self.clust_varname)
+        self.phenotype_df_with_counts = phenotype_df_with_counts.copy()
         self.phenotype_df = phenotype_df.copy()
         
         # make a new array of the means for the whole sample, with phenotypes as index
-        sample_varnames = self.phenotype_df.columns.values
-        sample_means = np.insert(self.df_means.values.astype(object),0,'whole sample')
+        sample_varnames = self.phenotype_df.columns.values[self.phenotype_df.columns.values!= "count"]
+        sample_means = np.insert(self.raw_df.mean().values.astype(object),0,'whole sample')
         sample_series = pd.Series(data = sample_means, index = sample_varnames)
 
         # Recover the raw phenotype values from the mean-normalized values
-        multiply_means = np.insert(self.df_means.values.astype(object),0,1)
+        multiply_means = np.insert(self.raw_df.mean().values.astype(object),0,1)
         raw_df_list = self.phenotype_df*multiply_means
 
         # Append the whole samples mean series with the phenotype df
-        self.phenotypes = raw_df_list.append(sample_series,ignore_index=True)
-        
+        self.phenotypes = pd.concat([raw_df_list,sample_series],ignore_index=True)
         if display_phenotypes == 1:
             print(self.phenotypes)
 
@@ -384,14 +400,14 @@ class PhenoBench():
     # Evaluation methods
     ###################################################### 
     
-    def plot_vat(self):
-        print('Visualizing tendency, this may take several minutes...')
-        vat(self.arr)
+    # def plot_vat(self):
+    #     print('Visualizing tendency, this may take several minutes...')
+    #     vat(self.arr)
         
     def report_statistics(self):
         
         print('----------------------')
-        self.hopkins_test()
+        # self.hopkins_test()
         self.silhoutte_test()
         print('----------------------')
         
@@ -402,12 +418,12 @@ class PhenoBench():
         
         print('Silhoutte score: ','%.4f' % self.sil_score)
     
-    def hopkins_test(self):
+    # def hopkins_test(self):
         
-        hopkins_val = hopkins(
-                self.arr,np.shape(self.arr)[0])
+    #     hopkins_val = hopkins(
+    #             self.arr,np.shape(self.arr)[0])
         
-        print('Hopkins score: ','%.4f' % hopkins_val)
+    #     print('Hopkins score: ','%.4f' % hopkins_val)
         
     # Plotting methods
     ###################################################### 
@@ -426,30 +442,50 @@ class PhenoBench():
         # Produce a radar chart for every cluster, for every variable in the summary df
         # Export a pdf of the figure
         my_dpi=150
-        plt.figure(figsize=(1000/my_dpi, 1000/my_dpi), dpi=my_dpi)
+        # plt.figure(figsize=(1000/my_dpi, 1000/my_dpi), dpi=my_dpi)
+        fig,ax = plt.subplots(figsize=(12, 5),dpi=1000, ncols=5,nrows=1,sharey=True)
         # Loop to plot
-        for row in range(0, len(self.phenotype_df.index)):
+        self.plot_df = (self.phenotype_df_with_counts - self.phenotype_df_with_counts.mean())/self.phenotype_df_with_counts.std()
+        self.plot_tp_df = self.plot_df.transpose()
+        for row in range(0, len(self.plot_df.index)):
+            plotting = self.plot_tp_df.loc[self.plot_tp_df.index!="count"][row]
+            ax[row].hlines(y=plotting.index[1:], 
+                           xmin=0, 
+                           xmax=plotting.values[1:],
+                           color='black', 
+                           alpha=1, 
+                           linewidth=8,
+                           )
+            ax[row].set_xticks(np.linspace(-2,2,5))
+            ax[row].set_yticks(plotting.index[1:],[x.strip("mean_") for x in plotting.index[1:]] , fontsize=8)
+            ax[row].grid(linestyle='--', alpha=0.5)
+            ax[row].set_title(f"Group {row}  (N = {self.phenotype_df_with_counts.loc[self.phenotype_df_with_counts['group_ID']==row,'count'].values[0]})")
+            ax[row].set_xlabel("St.Dev")
+        fig.savefig("phenobench_means.pdf")
+            
+        # for row in range(0, len(self.plot_df.index)):
 
-            self.make_single_radar(row=row, 
-                title = self.group_letters[row],
-                # title=self.phenotype_df[self.merge_col][row], 
-                max_radial_y = max_radial_y, 
-                color=color)
+        #     self.make_single_radar(
+        #         row=row, 
+        #         title = self.group_letters[row],
+        #         # title=self.phenotype_df[self.merge_col][row], 
+        #         max_radial_y = max_radial_y, 
+        #         color=color)
 
-        if self.settings['save_outputs'] == 1:
-            plt.savefig('phenotype_radials.pdf', format='pdf')
+        # if self.settings['save_outputs'] == 1:
+        #     plt.savefig('phenotype_radials.pdf', format='pdf')
 
-        plt.show()
+        # plt.show()
 
     def make_single_radar(self, row, title, max_radial_y, color=0):
         # Produce a single radar chart for 1 cluster, for every variable in summary df
 
         if color == 0:
-            color = plt.cm.get_cmap("Set2", len(self.phenotype_df.index))
+            color = plt.cm.get_cmap("Set2", len(self.plot_df.index))
             color = color(row)
 
         # number of variable
-        categories=list(self.phenotype_df)[1:] # dont include group_ID
+        categories=list(self.plot_df)[1:] # dont include group_ID
         # categories = list(self.raw_df) # THIS IS A HACK
         N = len(categories)
          
@@ -474,7 +510,7 @@ class PhenoBench():
         plt.ylim(0,max_radial_y)
          
         # Ind1
-        values=self.phenotype_df.loc[row].drop('group_ID').values.flatten().tolist()
+        values=self.plot_df.loc[row].drop('group_ID').values.flatten().tolist()
         values += values[:1]
         ax.plot(angles, values, color="black", linewidth=1, linestyle='solid')
         ax.fill(angles, values, color=color, alpha=0.4)
@@ -593,36 +629,46 @@ def group_stats(M,
             print(variable,clustcol,' not found in array')
             return 0 # end function early with null output
             
-    unique_groups = np.unique(group_inds) # get unique group indices
-    n = len(unique_groups)
-    out = np.zeros(n) # one mean value for every unique group
-
+    # unique_groups = np.unique(group_inds) # get unique group indices
+    # n = len(unique_groups)
+    # out = np.zeros(n) # one mean value for every unique group
+    
     # Make a dataframe that will be the output, starting with group IDs
-    df_out = pd.DataFrame(index = np.arange(n),
-                          data = unique_groups,
-                          columns = ["group_ID"],
-                          )
+    # df_out = pd.DataFrame(index = np.arange(n),
+    #                       data = unique_groups,
+    #                       columns = ["group_ID"],
+    #                       )
          
-    for i,g in enumerate(unique_groups):
-        mask = np.where(group_inds == g)[0]
+    # for i,g in enumerate(unique_groups):
+    #     mask = np.where(group_inds == g)[0]
         
-        if func[0:3] == "med": 
-            out[i] = np.median(data[mask])
+    #     if func[0:3] == "med": 
+    #         out[i] = np.median(data[mask])
         
-        elif func[0:3] == "min": 
-            out[i] = np.min(data[mask])
+    #     elif func[0:3] == "min": 
+    #         out[i] = np.min(data[mask])
 
-        elif func[0:3] == "max": 
-            out[i] = np.max(data[mask])
+    #     elif func[0:3] == "max": 
+    #         out[i] = np.max(data[mask])
             
-        elif func == "std": 
-            out[i] = np.std(data[mask])
+    #     elif func == "std": 
+    #         out[i] = np.std(data[mask])
             
-        elif func == "mean":
-            out[i] = np.mean(data[mask])
+    #     elif func == "mean":
+    #         out[i] = np.mean(data[mask])
         
-        else:
-            out[i] = np.mean(data[mask]) # set mean as the default function
-            
-    df_out[func+'_'+variable] = out    
+    #     else:
+    #         out[i] = np.mean(data[mask]) # set mean as the default function
+    
+    
+    output_df = M.groupby(clustcol)[variable].describe()[func]
+    df_out = pd.DataFrame(index = np.arange(len(output_df)),
+                          # data = unique_groups,
+                          columns = ['group_ID',func + "_" + variable],
+                          )
+    df_out['group_ID'] = df_out.index
+    # df_out['count'] = M.groupby(clustcol)[variable].describe()['count'].values
+    df_out[func+'_'+variable] = output_df.values   
+    # df_out[func+'_'+variable] = out    
+    
     return df_out
