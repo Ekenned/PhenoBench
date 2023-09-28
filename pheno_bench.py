@@ -69,7 +69,7 @@ class PhenoBench():
         Benchmark.run(dim_reduce = 'UMAP',
                       cluster = 'KMEANS',
                       )
-        Benchmark.plot_clusters_example()
+
         Benchmark.report_statistics()
         Benchmark.plot_vat() # visual assessment of tendency takes several mins
         
@@ -385,9 +385,9 @@ class PhenoBench():
         raw_df_list = self.phenotype_df*multiply_means
 
         # Append the whole samples mean series with the phenotype df
-        self.phenotypes = pd.concat([raw_df_list,sample_series],ignore_index=True)
+        # self.phenotypes = pd.concat([raw_df_list,sample_series],ignore_index=True)
         if display_phenotypes == 1:
-            print(self.phenotypes)
+            print(self.phenotype_df)
 
     def subplot_l(self, l = range(1,8)):
     
@@ -438,120 +438,58 @@ class PhenoBench():
             
         scatterplot_2D(self.embedding,labels,save=0)
 
-    def plot_multi_radar(self, max_radial_y = 4, color=0):
-        # Produce a radar chart for every cluster, for every variable in the summary df
+    def plot_multi_bar(self, max_radial_y = 4, color=0):
+        # Produce a chart for every cluster, for every variable in the summary df
         # Export a pdf of the figure
         my_dpi=150
+        
+        
+        
         # plt.figure(figsize=(1000/my_dpi, 1000/my_dpi), dpi=my_dpi)
-        fig,ax = plt.subplots(figsize=(12, 5),dpi=1000, ncols=5,nrows=1,sharey=True)
-        # Loop to plot
+        
+        # Instantiate normed phenotype dataframe
         self.plot_df = (self.phenotype_df_with_counts - self.phenotype_df_with_counts.mean())/self.phenotype_df_with_counts.std()
         self.plot_tp_df = self.plot_df.transpose()
-        for row in range(0, len(self.plot_df.index)):
+        ncols = len(self.plot_df.index)
+        
+        fig,ax = plt.subplots(figsize=(12, 5), dpi=1000, ncols=ncols,
+                              nrows=1, sharey=True)
+        
+        max_x_axis = int(np.ceil(np.max(np.abs( # set a max std value for plots, require min 3 sigma
+            np.append(self.plot_tp_df.loc[self.plot_tp_df.index!="count"].values.flatten(),2.99)
+            ))))
+        
+        # Loop to plot
+        for row in range(0, ncols):
+            
             plotting = self.plot_tp_df.loc[self.plot_tp_df.index!="count"][row]
-            ax[row].hlines(y=plotting.index[1:], 
+            
+            # max_x_axis = int(np.ceil(np.max(np.abs(plotting.values[1:]))))
+
+            neg_value = np.where(plotting.values[1:]<0)[0]
+
+            ax[row].hlines(y=plotting.index[1:],  # plot positives
                            xmin=0, 
                            xmax=plotting.values[1:],
-                           color='black', 
+                           color='blue', 
                            alpha=1, 
                            linewidth=8,
                            )
-            ax[row].set_xticks(np.linspace(-2,2,5))
+
+            ax[row].hlines(y=plotting.index[1:][neg_value], # plot negatives
+                           xmin=0, 
+                           xmax=plotting.values[1:][neg_value],
+                           color='red', 
+                           alpha=1, 
+                           linewidth=8,
+                           )
+            
+            ax[row].set_xticks(np.linspace(-max_x_axis,max_x_axis,2*max_x_axis+1))
             ax[row].set_yticks(plotting.index[1:],[x.strip("mean_") for x in plotting.index[1:]] , fontsize=8)
             ax[row].grid(linestyle='--', alpha=0.5)
             ax[row].set_title(f"Group {row}  (N = {self.phenotype_df_with_counts.loc[self.phenotype_df_with_counts['group_ID']==row,'count'].values[0]})")
             ax[row].set_xlabel("St.Dev")
-        fig.savefig("phenobench_means.pdf")
-            
-        # for row in range(0, len(self.plot_df.index)):
-
-        #     self.make_single_radar(
-        #         row=row, 
-        #         title = self.group_letters[row],
-        #         # title=self.phenotype_df[self.merge_col][row], 
-        #         max_radial_y = max_radial_y, 
-        #         color=color)
-
-        # if self.settings['save_outputs'] == 1:
-        #     plt.savefig('phenotype_radials.pdf', format='pdf')
-
-        # plt.show()
-
-    def make_single_radar(self, row, title, max_radial_y, color=0):
-        # Produce a single radar chart for 1 cluster, for every variable in summary df
-
-        if color == 0:
-            color = plt.cm.get_cmap("Set2", len(self.plot_df.index))
-            color = color(row)
-
-        # number of variable
-        categories=list(self.plot_df)[1:] # dont include group_ID
-        # categories = list(self.raw_df) # THIS IS A HACK
-        N = len(categories)
-         
-        # What will be the angle of each axis in the plot? (we divide the plot / number of variable)
-        angles = [n / float(N) * 2 * 3.1418 for n in range(N)]
-        angles += angles[:1]
-         
-        # Initialise the spider plot
-        ax = plt.subplot(self.subplot_length,self.subplot_length,row+1, polar=True,)
-         
-        # If you want the first axis to be on top:
-        ax.set_theta_offset(3.1418 / 2)
-        ax.set_theta_direction(-1)
-         
-        # Draw one axe per variable + add labels labels yet
-        plt.xticks(angles[:-1], categories, color='black',size=4)
-         
-        # Draw ylabels
-        ax.set_rlabel_position(0)
-        plt.yticks(np.arange(max_radial_y), [str(i) for i in np.arange(4)], alpha=0.5, color="grey", size=8)
-        # plt.yticks([1], ['1'], color="black", size=6)
-        plt.ylim(0,max_radial_y)
-         
-        # Ind1
-        values=self.plot_df.loc[row].drop('group_ID').values.flatten().tolist()
-        values += values[:1]
-        ax.plot(angles, values, color="black", linewidth=1, linestyle='solid')
-        ax.fill(angles, values, color=color, alpha=0.4)
-         
-        # Add a title
-        plt.title(title, size=11, color=color, y=1.1)
-
-    def plot_clusters_example(self):
-        # This is a quick dataset-specific example of trait prevalences mapped by cluster
-        
-        self.plot_clusters(labels=self.raw_df['LOC_REPORTED'])
-        plt.title('Colored by: At least one LOC')
-        plt.show()
-        
-        self.plot_clusters(labels=self.raw_df['LOC_DUR'])
-        plt.title('Colored by: LOC duration (s)')
-        plt.show()
-        
-        #self.plot_clusters(labels=self.raw_df['TRAILS_B'])
-        #plt.title('Colored by: TRAILS B score')
-        #plt.show()
-        
-        #self.plot_clusters(labels=self.raw_df['AGE'])
-        #plt.title('Colored by: AGE')
-        #plt.show()
-        
-        #self.plot_clusters(labels=self.raw_df['PCLM_SCORE'])
-        #plt.title('Colored by: PCLM_SCORE')
-        #plt.show()
-        
-        #self.plot_clusters(labels=self.raw_df['N_TBI'])
-        #plt.title('Colored by: N_TBI')
-        #plt.show()
-        
-        self.plot_clusters(labels=self.raw_df['EPILEPSY'])
-        plt.title('Colored by: EPILEPSY')
-        plt.show()
-        
-        self.plot_clusters(labels=self.clust_labels)
-        plt.title('Colored by: Clusterer predicted labels')
-        plt.show()
+        # fig.savefig("phenobench_means.pdf")
     
 # Misc functions
 ###################################################### 

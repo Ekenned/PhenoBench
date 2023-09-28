@@ -16,12 +16,12 @@ Benchmark.load(file = r'gen_data.csv')
 # Benchmark.print_settings() # Print all options which can be set manually
 Benchmark.settings['KMEANS_clusters'] = 4 # Example setting change: n clusters
 # Benchmark.settings['KMEANS_clusters'] = 4
-Benchmark.run(dim_reduce='PCA',cluster='KMEANS',split=0.9) #,split=0.5) # split to bootst
+Benchmark.run(dim_reduce='PCA',cluster='KMEANS') #,split=0.5) # split to bootst
 Benchmark.plot_clusters();plt.title('PCA and Kmeans');plt.show()
 Benchmark.report_statistics()
 
 # Benchmark.print_settings() # Print all options which can be set manually
-Benchmark.run(dim_reduce='UMAP',cluster='HDBSCAN',split=0.9) #,split=0.5) # split to bootst
+Benchmark.run(dim_reduce='UMAP',cluster='HDBSCAN') #,split=0.5) # split to bootst
 Benchmark.plot_clusters();plt.title('HDBSCAN and UMAP');plt.show()
 Benchmark.report_statistics()
 
@@ -35,6 +35,12 @@ Benchmark.calc_phenotypes()
 # Benchmark.phenotype_df = Benchmark.phenotype_df.drop(
 #     columns=["mean_TRAILS_B","mean_RACE","mean_EDUCATION"]).copy()
 
-#%%
-Benchmark.plot_multi_radar()
+#%% 
 
+# Report and save outputs
+
+Benchmark.phenotype_df.to_csv('phenotype_means.csv')
+
+Benchmark.plot_multi_bar()
+plt.savefig('phenotype_norms.pdf', format = 'pdf')
+plt.show()
