@@ -441,19 +441,13 @@ class PhenoBench():
     def plot_multi_bar(self, max_radial_y = 4, color=0):
         # Produce a chart for every cluster, for every variable in the summary df
         # Export a pdf of the figure
-        my_dpi=150
-        
-        
-        
-        # plt.figure(figsize=(1000/my_dpi, 1000/my_dpi), dpi=my_dpi)
         
         # Instantiate normed phenotype dataframe
         self.plot_df = (self.phenotype_df_with_counts - self.phenotype_df_with_counts.mean())/self.phenotype_df_with_counts.std()
         self.plot_tp_df = self.plot_df.transpose()
         ncols = len(self.plot_df.index)
         
-        fig,ax = plt.subplots(figsize=(12, 5), dpi=1000, ncols=ncols,
-                              nrows=1, sharey=True)
+        fig,ax = plt.subplots(ncols=ncols, nrows=1, sharey=True)
         
         max_x_axis = int(np.ceil(np.max(np.abs( # set a max std value for plots, require min 3 sigma
             np.append(self.plot_tp_df.loc[self.plot_tp_df.index!="count"].values.flatten(),2.99)
