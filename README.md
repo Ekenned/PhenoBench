@@ -21,7 +21,7 @@ The benefits of developing your study with PhenoBench are:
 
 Navigate to the PhenoBench home directory (github/PhenoBench) e.g. on windows run: "cd C:\Users\ . . . \GitHub\PhenoBench"
 
-To install all packages run: "conda install -c conda-forge --yes --file requirements.txt" and "pip install pyclustertend"
+To install all packages run: "conda install -c conda-forge --yes --file requirements.txt"
 
 The environment setup is now complete, and can be reactivated anytime by running "conda activate PhenoBench" in anaconda prompt.
 

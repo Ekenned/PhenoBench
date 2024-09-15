@@ -4,9 +4,10 @@ Created on Thu Mar 26 14:12:43 2020
 
 @author: Eamonn
 """
+
+import umap
 import numpy as np
 import pandas as pd
-import umap
 import hdbscan
 import matplotlib as mpl
 import matplotlib.pyplot as plt

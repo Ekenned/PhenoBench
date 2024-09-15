@@ -7,6 +7,7 @@ Created on Mon Mar 30 17:21:12 2020
 
 from pheno_bench import PhenoBench
 import matplotlib.pyplot as plt
+import umap
 
 Benchmark = PhenoBench() 
 
