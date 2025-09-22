@@ -2,7 +2,7 @@
 """
 Created on Thu Mar 26 14:09:41 2020
 
-@author: Eamonn Kennedy, Senior Research Scientist, TORCH lab, Univ. Utah, USA
+@author: Eamonn Kennedy, TORCH lab, Univ. Utah, USA
 
 Use Cholesky decomposition to generate multivariate correlated pseudo 
 observations of some common TBI-associated variables for algorithm testing.

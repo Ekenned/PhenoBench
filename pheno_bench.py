@@ -480,9 +480,9 @@ class PhenoBench():
                            )
             
             ax[row].set_xticks(np.linspace(-max_x_axis,max_x_axis,2*max_x_axis+1))
-            ax[row].set_yticks(plotting.index[1:],[x.strip("mean_") for x in plotting.index[1:]] , fontsize=8)
+            ax[row].set_yticks(plotting.index[1:],[x.strip("mean_") for x in plotting.index[1:]] , fontsize=6)
             ax[row].grid(linestyle='--', alpha=0.5)
-            ax[row].set_title(f"Group {row}  (N = {self.phenotype_df_with_counts.loc[self.phenotype_df_with_counts['group_ID']==row,'count'].values[0]})")
+            ax[row].set_title(f"{row}  (N = {self.phenotype_df_with_counts.loc[self.phenotype_df_with_counts['group_ID']==row,'count'].values[0]})")
             ax[row].set_xlabel("St.Dev")
         # fig.savefig("phenobench_means.pdf")
     
@@ -593,7 +593,7 @@ def group_stats(M,
     #     else:
     #         out[i] = np.mean(data[mask]) # set mean as the default function
     
-    
+    M.to_csv('df_with_groupID.csv')
     output_df = M.groupby(clustcol)[variable].describe()[func]
     df_out = pd.DataFrame(index = np.arange(len(output_df)),
                           # data = unique_groups,
